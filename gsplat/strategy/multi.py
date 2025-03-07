@@ -178,6 +178,8 @@ class MultiStrategy(Strategy):
                     value=self.config.min_opa_prune * 2.0,
                 )
 
+        torch.cuda.empty_cache()
+
     def _update_state(
         self,
         params: Union[Dict[str, torch.nn.Parameter], torch.nn.ParameterDict],
@@ -467,9 +469,11 @@ class MultiStrategy(Strategy):
                 if step % self.config.prune_sqrgrad_interval == 0:
                     sqrgrad_values = state["sqrgrad"]
 
-                    threshold = torch.quantile(
-                        sqrgrad_values, self.config.prune_sqrgrad_rate
-                    )
+                    non_one = sqrgrad_values != 1.0
+                    if non_one.sum() > 0:
+                        threshold = torch.quantile(
+                            sqrgrad_values[non_one], self.config.prune_sqrgrad_rate
+                        )
                     not_utilized = sqrgrad_values <= threshold
                     n_u = not_utilized.sum().item()
                     if self.config.verbose:
@@ -486,4 +490,3 @@ class MultiStrategy(Strategy):
     def _reset_state(self, state_id: str, state: Dict[str, any]):
         if state_id in self.config.resetable_state_ids and state_id in state:
             state[state_id].zero_()
-            torch.cuda.empty_cache()

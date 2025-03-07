@@ -129,12 +129,12 @@ def clone(
     # update the extra running state
     for k, v in state.items():
         if isinstance(v, torch.Tensor) and k != "binoms":
-            # if k == "sqrgrad":
-            #     new_values = torch.ones_like(v[sel]).repeat(
-            #         num_clones, *[1] * (v.dim() - 1)
-            #     )
-            # else:
-            new_values = v[sel].repeat(num_clones, *[1] * (v.dim() - 1))
+            if k == "sqrgrad":
+                new_values = torch.ones_like(v[sel]).repeat(
+                    num_clones, *[1] * (v.dim() - 1)
+                )
+            else:
+                new_values = v[sel].repeat(num_clones, *[1] * (v.dim() - 1))
 
             state[k] = torch.cat((v, new_values))
     torch.cuda.empty_cache()
@@ -201,8 +201,8 @@ def split(
         if isinstance(v, torch.Tensor) and k != "binoms":
             repeats = [num_splits] + [1] * (v.dim() - 1)
             v_new = v[sel].repeat(repeats)
-            # if k == "sqrgrad":
-            #     v_new = torch.ones_like(v_new)  # Fill with ones
+            if k == "sqrgrad":
+                v_new = torch.ones_like(v_new)  # Fill with ones
             state[k] = torch.cat((v[rest], v_new))
     torch.cuda.empty_cache()
 
@@ -364,6 +364,8 @@ def sample_add(
     for k, v in state.items():
         if isinstance(v, torch.Tensor) and k not in {"binoms", "scene_scale"}:
             v_new = torch.zeros((len(sampled_idxs), *v.shape[1:]), device=v.device)
+            if k == "sqrgrad":
+                v_new.fill_(1.0)
             state[k] = torch.cat((v, v_new))
 
 
