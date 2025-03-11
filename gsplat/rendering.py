@@ -52,7 +52,7 @@ def rasterization(
     distributed: bool = False,
     camera_model: Literal["pinhole", "ortho", "fisheye"] = "pinhole",
     covars: Optional[Tensor] = None,
-    use_snugbox_accutile: bool = False,
+    use_snugbox_accutile: bool = True,
 ) -> Tuple[Tensor, Tensor, Dict]:
     """Rasterize a set of 3D Gaussians (N) to a batch of image planes (C).
 
@@ -171,6 +171,9 @@ def rasterization(
         absgrad: If true, the absolute gradients of the projected 2D means
             will be computed during the backward pass, which could be accessed by
             `meta["means2d"].absgrad`. Default is False.
+        sqrgrad: If true, the square gradients of the projected 2D means
+            will be computed during the backward pass, which could be accessed by
+            `meta["means2d"].sqrgrad`. Default is False.
         rasterize_mode: The rasterization mode. Supported modes are "classic" and
             "antialiased". Default is "classic".
         channel_chunk: The number of channels to render in one go. Default is 32.
@@ -183,6 +186,7 @@ def rasterization(
             and "fisheye". Default is "pinhole".
         covars: Optional covariance matrices of the Gaussians. If provided, the `quats` and
             `scales` will be ignored. [N, 3, 3], Default is None.
+        use_snugbox_accutile: Whether to use snugbox accutile for accelerating the rasterization process. Default is True.
 
     Returns:
         A tuple:
